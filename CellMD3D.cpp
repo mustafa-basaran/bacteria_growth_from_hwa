@@ -2,6 +2,7 @@
 #include <iostream>
 #include <math.h>
 #include <time.h>
+//#include <clapack.h>
 #include "tools.h"
 #include "UniformGrid.h"
 #include "InputOutput.h"
@@ -10,12 +11,11 @@
 #include "Array.h"
 #include "Cell.h"
 #include "Neighbours.h"
+
 using namespace std;
 
 int main( int argc, char* argv[] ) 
-{	std::cout<<"HAHAHA"<<std::endl;
-	std::cout.flush();
-	exit(1);
+{
 	srand((unsigned)time(NULL));
 	bool append;
     

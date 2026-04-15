@@ -11,7 +11,7 @@
 
 
 // Main function to move cell
-void MoveCell(int cellID, UniformGrid& Grid, const Cell* old_cells, Cell* new_cells, const int* neighbours, double dt, DoubleArray2D& Height, CoordArray2D& Normal, DoubleArray2D& Wall)
+void MoveCell(int cellID, UniformGrid& Grid, const Cell* old_cells, Cell* new_cells, const int* neighbours, double dt, DoubleArray2D& Height, CoordArray2D& Normal, DoubleArray2D& Wall, bool isprop)
 {
 	UniformGrid::Address oldAddress, newAddress;	// for storing addresses of cells in the Grid
 
@@ -26,7 +26,7 @@ void MoveCell(int cellID, UniformGrid& Grid, const Cell* old_cells, Cell* new_ce
 	XYAddress = Grid.GetXY(oldAddress);
 
 	// integrates one step, updates positions from old to new
-	integrate(dt, cellID, old_cells, new_cells, neighbours, Height, Normal, Grid, XYAddress, Wall);
+	integrate(dt, cellID, old_cells, new_cells, neighbours, Height, Normal, Grid, XYAddress, Wall, isprop);
 
 	// check if the cell has moved out of its box
 	newAddress = Grid.GetAddress(average(newCell.Position));

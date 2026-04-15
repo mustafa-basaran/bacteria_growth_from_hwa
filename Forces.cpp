@@ -100,8 +100,8 @@ void F_cw(const Cell& cell, double Wall_z, DoubleCoord& F1, DoubleCoord& F2, Dou
 
 	// Location of wall at first locus including effect of roughness
 	DoubleCoord wall;
-	wall.x = cell.Position.p.x+((float)rand()/RAND_MAX-0.5)*var_pos;
-	wall.y = cell.Position.p.y+((float)rand()/RAND_MAX-0.5)*var_pos;
+	wall.x = cell.Position.p.x;
+	wall.y = cell.Position.p.y;
 	wall.z = Wall_z;
 	r1 = wall; // location of wall force
 
@@ -333,39 +333,37 @@ void F_v(const Cell& cell, DoubleCoord& F, DoubleCoord& T)
 }
 
 // sum all of the forces on the cell
-void sum_forces(const Cell& cell, const Cell* cell_array, const int* neighbours, DoubleCoord& Fnet, DoubleCoord& Tnet, DoubleArray2D& Height, CoordArray2D& Normal, UniformGrid& Grid, const IntCoord& XYAddress, DoubleArray2D& Wall, DoubleCoord& cwStaFric, DoubleCoord& cwDynFric)
+void sum_forces(const Cell& cell, const Cell* cell_array, const int* neighbours, DoubleCoord& Fnet, DoubleCoord& Tnet, DoubleArray2D& Height, CoordArray2D& Normal, UniformGrid& Grid, const IntCoord& XYAddress, DoubleArray2D& Wall, DoubleCoord& cwStaFric, DoubleCoord& cwDynFric, bool isprop)
 {
 	Fnet = DoubleCoord(0,0,0);
 	Tnet = DoubleCoord(0,0,0);
-	DoubleCoord Fprop(0,0,0),F(0,0,0), F2(0,0,0), T(0,0,0), p1,q1,r, r2;
+	DoubleCoord Tprop(0,0,0),Fprop(0,0,0),F(0,0,0), F2(0,0,0), T(0,0,0), p1,q1,r, r2;
 	DoubleCoord cm = average(cell.Position);
 	double d, wall_y;
-
 
 	int ID;
 	int numNeighbours = neighbours[0];
 
 	// loop through neighbours and find the forces
 	//Added by mustafa başaran
+	if (isprop){
 	p1 = cell.Position.p;
 	q1 = cell.Position.q;
-	Fprop = scale(diff(q1,p1),10.0);
+	Fprop = scale(diff(q1,p1),250.0);
+	Tprop.z = 5.0;
 	Fnet = sum(Fnet,Fprop);
-	Fnet.z = 0.0 ;
-		std::cout<<p1.x<<std::endl;
-		std::cout<<"HAHAHA"<<std::endl;
-		std::cout.flush();
-	//End of edit by MB
-/* 	for (int neighbourID = 1; neighbourID<numNeighbours+1; neighbourID++)
+	Tnet = sum(Tnet, Tprop);
+	}	//End of edit by MB
+	for (int neighbourID = 1; neighbourID<numNeighbours+1; neighbourID++)
 	{
 		ID = neighbours[neighbourID];	// the ID of the current neighbour
 		F_cc(cell, cell_array[ID], F, r, d);	// contact force between cell and neighbours
 		Fnet = sum(Fnet, F);	// net force is the sum of all forces
 		r = diff(r, cm);		// r is distance from centre of mass to contact force location
 		Tnet = sum(Tnet, cross(r, F));	// net torque = sum(rxF)
-	} */
+	}
 
-/* 	cwStaFric = DoubleCoord(0,0,0);
+	cwStaFric = DoubleCoord(0,0,0);
 	cwDynFric = DoubleCoord(0,0,0);
     // calculate cell-wall forces if cell is close to wall
 	if (min(cell.Position.q.z,cell.Position.p.z)<1.2*cell.Radius)
@@ -380,17 +378,18 @@ void sum_forces(const Cell& cell, const Cell* cell_array, const int* neighbours,
 		r2 = diff(r2, cm);		// r is distance from centre of mass to contact force location
 		Tnet = sum(Tnet, cross(r2, F2));	// net torque = sum(rxF)
 	}
-    Fnet.z = 0.0; */
-	
+    
 	// viscous force with fluid
 /* 	F_v(cell, F, T);
 	Fnet = sum(Fnet, F);
-	Tnet = sum(Tnet, T);
+	Tnet = sum(Tnet, T); */
+
 
 	F_surf_tension(cell, Grid, XYAddress, Height, Normal, F, T);
 	Fnet = sum(Fnet, F);
-	Tnet = sum(Tnet, T); */
-    
+	Tnet = sum(Tnet, T);
+	// std::cout<<Fnet.x<<','<<Fnet.y<<','<<Fnet.z<<std::endl;
+
 
 }
 

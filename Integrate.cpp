@@ -8,7 +8,7 @@
 
 
 // integrates to find the new positions based on the forces due to neighbors
-void integrate(double dt, int cellID, const Cell* old_cells, Cell* new_cells, const int* neighbours, DoubleArray2D& Height, CoordArray2D& Normal, UniformGrid& Grid, const IntCoord& XYAddress, DoubleArray2D& Wall)
+void integrate(double dt, int cellID, const Cell* old_cells, Cell* new_cells, const int* neighbours, DoubleArray2D& Height, CoordArray2D& Normal, UniformGrid& Grid, const IntCoord& XYAddress, DoubleArray2D& Wall, bool isprop)
 {
   DoubleCoord F, T, cwStaFric, cwDynFric;
 
@@ -16,13 +16,13 @@ void integrate(double dt, int cellID, const Cell* old_cells, Cell* new_cells, co
 	Cell temp_cell;
 
 	// sum forces from original positions, velocities
-	sum_forces(old_cells[cellID], old_cells, neighbours, F, T, Height, Normal, Grid, XYAddress, Wall, cwStaFric, cwDynFric);	// Find F, T
+	sum_forces(old_cells[cellID], old_cells, neighbours, F, T, Height, Normal, Grid, XYAddress, Wall, cwStaFric, cwDynFric, isprop);	// Find F, T
 
 	// update positions of temp cell, velocities updated 1/2 step
 	UpdatePositions(dt, F, T, old_cells[cellID], temp_cell);
 
 	// Recalculate dissipative forces
-	sum_forces(temp_cell, old_cells, neighbours, F, T, Height, Normal, Grid, XYAddress, Wall, cwStaFric, cwDynFric);
+	sum_forces(temp_cell, old_cells, neighbours, F, T, Height, Normal, Grid, XYAddress, Wall, cwStaFric, cwDynFric, isprop);
 
 	// Update velocities another 1/2 step
 	UpdateVelocities(dt, F, T, temp_cell, new_cells[cellID]);
@@ -62,7 +62,7 @@ void UpdatePositions(double dt, const DoubleCoord& F, DoubleCoord& T, const Cell
 
 	// update velocities dt/2
 	new_cell.Velocity = sum(old_cell.Velocity,scale(F,dt/(2.0*M)));
-	new_cell.AngularVelocity = scale(sum(sum(vaz,scale(Tz,dt/(2.0*Iz))), sum(vaxy,scale(Txy,dt/(2.0*Ixy)))),0.0);
+	new_cell.AngularVelocity = sum(sum(vaz,scale(Tz,dt/(2.0*Iz))), sum(vaxy,scale(Txy,dt/(2.0*Ixy))));
 
 	// change cell coordinates to reduced coordinates
 	DoubleCoord cm = average(old_cell.Position);	// centre of mass

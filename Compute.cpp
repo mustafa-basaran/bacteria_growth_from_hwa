@@ -23,7 +23,11 @@ void mean_stress(const Cell& cell, const Cell* cell_array, const int* neighbours
 	double d;
 
 	double V = cell.Length*PI*cell.Radius*cell.Radius + 4.0/3.0*PI*cell.Radius*cell.Radius*cell.Radius;
-
+	int x_index = int(average(cell.Position).x / 4.00 + 64);
+	int y_index = int(average(cell.Position).y / 4.00 + 64);
+	int z_index = int(average(cell.Position).z / 4.00);
+	if (!((x_index < 128) & (y_index < 128) & (z_index < 128) & (x_index >= 0) & (y_index >= 0) & (z_index >= 0)))
+		printf("asasas");
 	IntCoord XYAddress = Grid.GetXY( Grid.GetAddress(average(cell.Position)));
 
 	int numNeighbours = neighbours[0];

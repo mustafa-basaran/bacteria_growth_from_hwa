@@ -29,7 +29,12 @@ void getNeighbours(const Cell* cell_array, int N_cells, UniformGrid& Grid, int**
 	// loop through all cells
 	for (int cellID=0;cellID<N_cells;cellID++)
 	{
-		// get coarse-grained neighbours from Grid
+		//// get coarse-grained neighbours from Grid
+		//int x_index = int(average(cell_array[cellID].Position).x / 4.00 + 64);
+		//int y_index = int(average(cell_array[cellID].Position).y / 4.00 + 64);
+		//int z_index = int(average(cell_array[cellID].Position).z / 4.00);
+		//if (!((x_index < 128) & (y_index < 128) & (z_index < 128) & (x_index >= 0) & (y_index >= 0) & (z_index >= 0)))
+		//	printf("asasas");
 		Address = Grid.GetAddress(average(cell_array[cellID].Position));
 		numNeighbours = Grid.GetNeighbours(cellID, Address, NeighbourList[cellID], maxNeighbours);
 		numNeighbours = reduceNeighbours(cell_array[cellID], cell_array, NeighbourList[cellID]);
@@ -47,7 +52,13 @@ void getNeighbours(const Cell* cell_array, UniformGrid& Grid, int** NeighbourLis
 	{
 		cellID = ID[ii];
 
-		// get coarse-grained neighbours from Grid
+		//// get coarse-grained neighbours from Grid
+		//int x_index = int(average(cell_array[cellID].Position).x / 4.00 + 64);
+		//int y_index = int(average(cell_array[cellID].Position).y / 4.00 + 64);
+		//int z_index = int(average(cell_array[cellID].Position).z / 4.00);
+		//if (!((x_index < 128) & (y_index < 128) & (z_index < 128) & (x_index >= 0) & (y_index >= 0) & (z_index >= 0)))
+		//	printf("asasas");
+
 		Address = Grid.GetAddress(average(cell_array[cellID].Position));
 		numNeighbours = Grid.GetNeighbours(cellID, Address, NeighbourList[cellID], maxNeighbours);
 		numNeighbours = reduceNeighbours(cell_array[cellID], cell_array, NeighbourList[cellID]);

@@ -8,7 +8,7 @@
 
 
 // integrates to find the new positions based on the forces due to neighbors
-void integrate(double dt, int cellID, const Cell* old_cells, Cell* new_cells, const int* neighbours, DoubleArray2D& Height, CoordArray2D& Normal, UniformGrid& Grid, const IntCoord& XYAddress, DoubleArray2D& Wall)
+void integrate(double dt, int cellID, const Cell* old_cells, Cell* new_cells, const int* neighbours, DoubleArray2D& Height, CoordArray2D& Normal, UniformGrid& Grid, const IntCoord& XYAddress, DoubleArray2D& Wall, bool isprop)
 {
   DoubleCoord F, T, cwStaFric, cwDynFric;
 
@@ -16,16 +16,17 @@ void integrate(double dt, int cellID, const Cell* old_cells, Cell* new_cells, co
 	Cell temp_cell;
 
 	// sum forces from original positions, velocities
-	sum_forces(old_cells[cellID], old_cells, neighbours, F, T, Height, Normal, Grid, XYAddress, Wall, cwStaFric, cwDynFric);	// Find F, T
+	sum_forces(old_cells[cellID], old_cells, neighbours, F, T, Height, Normal, Grid, XYAddress, Wall, cwStaFric, cwDynFric, isprop);	// Find F, T
 
 	// update positions of temp cell, velocities updated 1/2 step
 	UpdatePositions(dt, F, T, old_cells[cellID], temp_cell);
 
 	// Recalculate dissipative forces
-	sum_forces(temp_cell, old_cells, neighbours, F, T, Height, Normal, Grid, XYAddress, Wall, cwStaFric, cwDynFric);
+	sum_forces(temp_cell, old_cells, neighbours, F, T, Height, Normal, Grid, XYAddress, Wall, cwStaFric, cwDynFric, isprop);
 
 	// Update velocities another 1/2 step
 	UpdateVelocities(dt, F, T, temp_cell, new_cells[cellID]);
+
 	new_cells[cellID].DynFric = cwDynFric;
 	new_cells[cellID].StaFric = cwStaFric;
 }
@@ -49,6 +50,9 @@ void UpdatePositions(double dt, const DoubleCoord& F, DoubleCoord& T, const Cell
     double M = PI*R2*(old_cell.Length + 4.0/3.0*old_cell.Radius); // Yue and Hui's version
     double Ixy = PI*R2*(old_cell.Length*L2/12.0+old_cell.Radius*(8.0*R2/15.0+L2/3.0));  // Yue and Hui's version
     double Iz = PI*R2*R2*(old_cell.Length/2.0+8.0*old_cell.Radius/15.0);   // Yue and Hui's version
+	double gama_parallel = 760;
+	double gama_perpendicular = gama_parallel * 2;
+	double gama_rotational = gama_parallel * (old_cell.Length* old_cell.Length) /6.0 ;
 
 	// unit vector along length of cell
 	DoubleCoord z = diff(old_cell.Position.q, old_cell.Position.p);	// z axis (through length of cell)
@@ -60,15 +64,22 @@ void UpdatePositions(double dt, const DoubleCoord& F, DoubleCoord& T, const Cell
 	DoubleCoord Tz = scale(z,dot(z,T));
 	DoubleCoord Txy = diff(T,Tz);
 
+
+
+	DoubleCoord F_parallel = scale(z, dot(z, F));
+	DoubleCoord F_perpendicular = diff(F,F_parallel);
 	// update velocities dt/2
-	new_cell.Velocity = sum(old_cell.Velocity,scale(F,dt/(2.0*M)));
-	new_cell.AngularVelocity = scale(sum(sum(vaz,scale(Tz,dt/(2.0*Iz))), sum(vaxy,scale(Txy,dt/(2.0*Ixy)))),0.0);
+	new_cell.Velocity = sum(scale(F_parallel,1.0/(gama_parallel)), scale(F_perpendicular, 1.0 / (gama_perpendicular)));
+	new_cell.AngularVelocity = sum(sum(DoubleCoord(0, 0, 0),scale(Tz,1/(100.0*Iz))), sum(DoubleCoord(0, 0, 0), scale(Txy, 1.0 / (gama_rotational))));
+
+	//new_cell.Velocity = sum(old_cell.Velocity, scale(F, dt / (2.0 * M)));
+	//new_cell.AngularVelocity = sum(sum(vaz, scale(Tz, dt / (2.0 * Iz))), sum(vaxy, scale(Txy, dt / (2.0 * Ixy))));
 
 	// change cell coordinates to reduced coordinates
 	DoubleCoord cm = average(old_cell.Position);	// centre of mass
 
 	// vector to nodes
-	DoubleCoord rcmp = diff(old_cell.Position.p,cm);
+	DoubleCoord rcmp = diff(old_cell.Position.p, cm);
 	DoubleCoord rcmq = diff(old_cell.Position.q,cm);
 
 	// angular velocity

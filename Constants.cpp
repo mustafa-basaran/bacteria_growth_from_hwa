@@ -26,7 +26,7 @@ int BoxX = 150;	// number of boxes per side of the grid
 int BoxY = 150;
 int BoxZ = 50;
 int BoxZAgar = 30;
-int maxLevels = 1;
+const int maxLevels = 4;
 double BoxLength = 2;
 int FilterLen = 5;
 
@@ -56,4 +56,4 @@ int minIter = 500;
 int maxIter = 20000;
 int InterfaceCondition = 1; // 1: continuous $\partial C/partial n$; 2: flux continuity with qC; 3: continuous $\partial C/\partial t$;
 bool NutrientGSI = 0;
-int refinementGridHeight = 4;
+const int refinementGridHeight = 2;

@@ -11,7 +11,7 @@
 
 
 // Main function to move cell
-void MoveCell(int cellID, UniformGrid& Grid, const Cell* old_cells, Cell* new_cells, const int* neighbours, double dt, DoubleArray2D& Height, CoordArray2D& Normal, DoubleArray2D& Wall)
+void MoveCell(int cellID, UniformGrid& Grid, const Cell* old_cells, Cell* new_cells, const int* neighbours, double dt, DoubleArray2D& Height, CoordArray2D& Normal, DoubleArray2D& Wall, bool isprop)
 {
 	UniformGrid::Address oldAddress, newAddress;	// for storing addresses of cells in the Grid
 
@@ -21,14 +21,25 @@ void MoveCell(int cellID, UniformGrid& Grid, const Cell* old_cells, Cell* new_ce
 	const Cell& oldCell = old_cells[cellID];
 	Cell& newCell = new_cells[cellID];
 
-	// gives the current neighbours of the cell
+	//// gives the current neighbours of the cell
+	//int x_index = int(average(oldCell.Position).x / 4.00 + 64);
+	//int y_index = int(average(oldCell.Position).y / 4.00 + 64);
+	//int z_index = int(average(oldCell.Position).z / 4.00);
+	//if (!((x_index < 128) & (y_index < 128) & (z_index < 128) & (x_index >= 0) & (y_index >= 0) & (z_index >= 0)))
+	//	printf("asasas");
 	oldAddress = Grid.GetAddress(average(oldCell.Position));
 	XYAddress = Grid.GetXY(oldAddress);
 
 	// integrates one step, updates positions from old to new
-	integrate(dt, cellID, old_cells, new_cells, neighbours, Height, Normal, Grid, XYAddress, Wall);
+	integrate(dt, cellID, old_cells, new_cells, neighbours, Height, Normal, Grid, XYAddress, Wall, isprop);
 
-	// check if the cell has moved out of its box
+	//// check if the cell has moved out of its box
+	//	// gives the current neighbours of the cell
+	//x_index = int(average(newCell.Position).x / 4.00 + 64);
+	//y_index = int(average(newCell.Position).y / 4.00 + 64);
+	//z_index = int(average(newCell.Position).z / 4.00);
+	//if (!((x_index < 128) & (y_index < 128) & (z_index < 128) & (x_index >= 0) & (y_index >= 0) & (z_index >= 0)))
+	//	printf("asasas");
 	newAddress = Grid.GetAddress(average(newCell.Position));
     if (newAddress.a!=oldAddress.a) {
 #pragma omp critical
@@ -66,7 +77,12 @@ void DivideCell(int parentID, int daughterID, Cell* cells, UniformGrid& Grid, co
 	Cell& parentCell = cells[parentID];
 	Cell& daughterCell = cells[daughterID];
 
-	// find stress on the mother cell
+	//// find stress on the mother cell
+	//int x_index = int(average(parentCell.Position).x / 4.00 + 64);
+	//int y_index = int(average(parentCell.Position).y / 4.00 + 64);
+	//int z_index = int(average(parentCell.Position).z / 4.00);
+	//if (!((x_index < 128) & (y_index < 128) & (z_index < 128) & (x_index >= 0) & (y_index >= 0) & (z_index >= 0)))
+	//	printf("asasas");
 	oldAddress = Grid.GetAddress(average(parentCell.Position));
 	
 	// remove the ID from the grid

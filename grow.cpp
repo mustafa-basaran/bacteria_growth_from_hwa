@@ -20,6 +20,11 @@ void grow(double dt, Cell& cell, EnvArray3D& Env, AgaArray2D** Wal, UniformGrid&
 	double Growth_rate;
 
 	// Get position in uniform grid to access correct index for height
+    int x_index = int(cm.x / 4.00 + 64);
+    int y_index = int(cm.y / 4.00 + 64);
+    int z_index = int(cm.z / 4.00);
+    if (!((x_index < 128) & (y_index < 128) & (z_index < 128) & (x_index >= 0) & (y_index >= 0) & (z_index >= 0)))
+        printf("asasas");
 	IntCoord XYAddress = Grid.GetXY(Grid.GetAddress(cm));
     
 	// Look up the growth rate in the environment array

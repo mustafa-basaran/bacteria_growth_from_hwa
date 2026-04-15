@@ -1,7 +1,9 @@
+//#define _CRT_SECURE_NO_WARNINGS
 #include <omp.h>
 #include <iostream>
 #include <math.h>
 #include <time.h>
+//#include <clapack.h>
 #include "tools.h"
 #include "UniformGrid.h"
 #include "InputOutput.h"
@@ -10,12 +12,11 @@
 #include "Array.h"
 #include "Cell.h"
 #include "Neighbours.h"
+
 using namespace std;
 
 int main( int argc, char* argv[] ) 
-{	std::cout<<"HAHAHA"<<std::endl;
-	std::cout.flush();
-	exit(1);
+{
 	srand((unsigned)time(NULL));
 	bool append;
     
@@ -55,11 +56,9 @@ int main( int argc, char* argv[] )
 
 	// initialize a configuration with N_cells cells in it
 	int N_cells;
-	if (argc==5 || argc==8)
-	{
-		N_cells = LoadCells(argv[4], old_cells, Grid, t0, initial_dt);
-	}
-	else N_cells = AddFirstCells(old_cells, L_divide, cellRadius, Grid, IniConditions);
+	//N_cells = AddFirstCells(old_cells, L_divide, cellRadius, Grid, IniConditions);
+	N_cells = ReadFirstCells(old_cells, L_divide, cellRadius, Grid, IniConditions);
+
 	printf("Added initial cells \n");
 
 	// files for output
@@ -98,16 +97,17 @@ int main( int argc, char* argv[] )
 	// Array for storing neighbours so that they don't need to be recalculated every time step
 	int maxNeighbours = Grid.MaxCellsPerBox()*27+1;
 	int** NeighbourList = InitializeNeighbourList(maxCells, maxNeighbours);
+	printf("Created fielaaads \n");
 
 	// Start timing simulation
-	time_t t_start, t_end;
-	t_start = time(NULL);
+	//time_t t_start, t_end;
+	//t_start = time(NULL);
 
 	// Main simulation function
 	RunSimulation(N_cells, old_cells, new_cells, NeighbourList, maxNeighbours, Grid, Files, append, Height, Density, Density1, Density2, WallDensity, WallDensity1, WallDensity2, Environment, oldEnvironment, FieldAgar, oldFieldAgar, FieldWall, oldFieldWall, Normal);
 	
 	// save end time
-	t_end = time(NULL);
+	//t_end = time(NULL);
 
 	// cleanup
     CloseOutputFileLineage(Files);
@@ -123,6 +123,6 @@ int main( int argc, char* argv[] )
         delete oldFieldWall[i];
     }
 	
-	printf("Total time for simulation %ld\n",t_end-t_start);
+	//printf("Total time for simulation %ld\n",t_end-t_start);
 	return 0;
 }

@@ -391,7 +391,7 @@ void UpdateAgar(Array3D<LocalAga>** Aga, Array3D<LocalAga>** prevAga, Array2D<Lo
     
     
     // Calculate new C concentration
-    double Cnew = prevAga[level]->Get(position).CarbonAgar + DiffAgar*(Cxx + Cyy + Czz)*Cdt;
+    double Cnew = 0.5;
     Aga[level]->At(position).CarbonAgar = max(0.0,min(Cnew,maxCarbon));	// for stability
     if (NutrientGSI==1)
     {
@@ -547,7 +547,7 @@ void UpdateWall(Array3D<LocalEnv>* Env, Array3D<LocalAga>** prevAga, Array2D<Loc
         
         Czz = 2.0*(prevAga[level]->Get(position.x,position.y,0).CarbonAgar-prevWal[level]->Get(position.x,position.y).CarbonAgar)/(BoxLength*BoxLength*pow(4.0,level));
         
-        double Cnew = prevWal[level]->Get(position).CarbonAgar + DiffAgar*(Cxx + Cyy+ Czz)*Cdt;
+        double Cnew = 0.5;
         Wal[level]->At(position).CarbonAgar = max(0.0,min(Cnew,maxCarbon));	// for stability
         if (NutrientGSI==1)
         {

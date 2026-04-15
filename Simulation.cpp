@@ -9,13 +9,11 @@
 #include "InputOutput.h"
 #include "Constants.h"
 #include "tools.h"
-#include "UniformGrid.h"
 #include "Nutrients.h"
+#include "UniformGrid.h"
 #include "Neighbours.h"
 #include "Forces.h"
-#include "ClockIt.h"
-#include <iostream>
-using namespace std;
+
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -40,6 +38,110 @@ void RunSimulation(int N_cells, Cell* old_cells, Cell* new_cells, int** Neighbou
     SimSingleThread(N_cells, old_cells, new_cells, NeighbourList, maxNeighbours, Grid, Files, append, Height, Density, Density1, Density2, WallDensity, WallDensity1, WallDensity2, Environment, oldEnvironment, FieldAgar, oldFieldAgar, FieldWall, oldFieldWall, Normal);
 }
 
+int applyBoundaryCondition(int N_cells, Cell* old_cells, UniformGrid& Grid, double L_domain, double L_reflection)
+{			
+	UniformGrid::Address current_adressss;
+	int reflected_cell_count,new_cell;
+	struct Cell current_cell;
+	Segment current_position;
+
+	reflected_cell_count = 0;
+	Cell* reflected_cells = old_cells;
+	for (int cellID=0;cellID<N_cells;cellID++)
+	{
+		current_cell = old_cells[cellID];
+		current_position = current_cell.Position;
+
+		current_adressss = Grid.GetAddress(average(current_cell.Position));
+
+		if (current_position.p.x > (L_domain/2-L_reflection) || (current_position.q.x > (L_domain/2-L_reflection)))
+		{
+			current_cell.Position.p.x = current_cell.Position.p.x-L_domain;
+			current_cell.Position.q.x = current_cell.Position.q.x-L_domain;
+			old_cells[N_cells+reflected_cell_count] = current_cell;
+
+			current_adressss = Grid.GetAddress(average(current_cell.Position));
+
+			Grid.Add(N_cells+reflected_cell_count, Grid.GetAddress(average(current_cell.Position)));
+			reflected_cell_count++;
+			
+			
+		}else if (current_position.p.x < (-L_domain/2+L_reflection) || (current_position.q.x < (-L_domain/2+L_reflection)))
+		{
+			current_cell.Position.p.x = current_cell.Position.p.x+L_domain;
+			current_cell.Position.q.x = current_cell.Position.q.x+L_domain;
+			old_cells[N_cells+reflected_cell_count] = current_cell;
+
+			Grid.Add(N_cells+reflected_cell_count, Grid.GetAddress(average(current_cell.Position)));
+			reflected_cell_count++;
+			
+		}
+	}
+	N_cells = N_cells+reflected_cell_count;
+	reflected_cell_count = 0 ;
+	for (int cellID=0;cellID<N_cells;cellID++)
+	{
+		current_cell = old_cells[cellID];
+		current_position = current_cell.Position;
+
+		current_adressss = Grid.GetAddress(average(current_cell.Position));
+
+		if (current_position.p.y > (L_domain/2-L_reflection) || (current_position.q.y > (L_domain/2-L_reflection)))
+		{
+			current_cell.Position.p.y = current_cell.Position.p.y-L_domain;
+			current_cell.Position.q.y = current_cell.Position.q.y-L_domain;
+			old_cells[N_cells+reflected_cell_count] = current_cell;
+
+			Grid.Add(N_cells+reflected_cell_count, Grid.GetAddress(average(current_cell.Position)));
+			reflected_cell_count++;			
+		}else if (current_position.p.y < (-L_domain/2+L_reflection) || (current_position.q.y < (-L_domain/2+L_reflection)))
+		{
+			current_cell.Position.p.y = current_cell.Position.p.y+L_domain;
+			current_cell.Position.q.y = current_cell.Position.q.y+L_domain;
+			old_cells[N_cells+reflected_cell_count] = current_cell;
+
+			Grid.Add(N_cells+reflected_cell_count, Grid.GetAddress(average(current_cell.Position)));
+			reflected_cell_count++;
+			
+		}
+	}
+	new_cell = N_cells+reflected_cell_count;
+	return new_cell;
+}
+int reverseBoundaryCondition(int N_cells, Cell* old_cells, UniformGrid& Grid, double L_domain, double L_reflection){
+	int cell_count_inside,new_cell;
+	double current_center_x,current_center_y;
+	UniformGrid::Address current_adressss;
+	struct Cell current_cell;
+	Segment current_position;
+	cell_count_inside = 0;
+		for (int cellID=0;cellID<N_cells;cellID++)
+		{
+		current_cell = old_cells[cellID];
+		current_position = current_cell.Position;
+
+
+		current_center_x = (current_position.q.x+current_position.p.x)/2.0;
+		current_center_y = (current_position.q.y+current_position.p.y)/2.0;
+		//std::cout<<cell_count_inside<<std::endl;
+		if (current_center_x<L_domain/2 && current_center_x>-L_domain/2 && current_center_y<L_domain/2 && current_center_y > -L_domain/2){
+			current_adressss = Grid.GetAddress(average(current_cell.Position));
+
+			Grid.Remove(cellID, Grid.GetAddress(average(current_cell.Position)));
+			Grid.Add(cell_count_inside, Grid.GetAddress(average(current_cell.Position)));
+			old_cells[cell_count_inside] = current_cell;
+			cell_count_inside++;
+
+		}else{
+			Grid.Remove(cellID, Grid.GetAddress(average(current_cell.Position)));
+
+		}
+		}
+	new_cell = cell_count_inside;
+	return new_cell;
+}
+
+
 void SimSingleThread(int N_cells, Cell* old_cells, Cell* new_cells, int** NeighbourList, int maxNeighbours, UniformGrid& Grid, OutputFiles Files, bool append, DoubleArray2D& Height, DoubleArray3D& Density, DoubleArray3D& Density1, DoubleArray3D& Density2, DoubleArray2D& WallDensity,DoubleArray2D& WallDensity1,DoubleArray2D& WallDensity2,EnvArray3D& Environment, EnvArray3D& oldEnvironment, AgaArray3D** FieldAgar, AgaArray3D** oldFieldAgar, AgaArray2D** FieldWall, AgaArray2D** oldFieldWall, CoordArray2D& Normal)
 {
     // initialize time (generations)
@@ -48,7 +150,6 @@ void SimSingleThread(int N_cells, Cell* old_cells, Cell* new_cells, int** Neighb
 	int minx, maxx, miny, maxy, maxz;
 
 	// **********************Initialize*******************************
-
     // counter to determine when to output data
 	double NextOutTime = OutputTime;
     double NextUpdateTime = UpdateTime;
@@ -164,7 +265,7 @@ void SimSingleThread(int N_cells, Cell* old_cells, Cell* new_cells, int** Neighb
 	{
 		for (int jj = 0; jj < BoxY; jj++)
 		{
-			Wall.Set(ii,jj,((float)rand()/RAND_MAX-0.5)*wall_rough);
+			Wall.Set(ii,jj,0.0);
 		}
 	}
 	printf("Created wall \n");
@@ -187,9 +288,9 @@ void SimSingleThread(int N_cells, Cell* old_cells, Cell* new_cells, int** Neighb
     CreateOutputFiles(0, Files, append);
 	GetDensity(RoughDensity, RoughDensity1, RoughDensity2, insideColonyDen, Height, Grid, old_cells, minx, maxx, miny, maxy, maxz);
 	ShiftDensity(RoughDensity, RoughDensity1, RoughDensity2, RoughWallDensity, RoughWallDensity1, RoughWallDensity2,RoughDensityShiftP, RoughDensity1ShiftP, RoughDensity2ShiftP,RoughWallDensityShiftP, RoughWallDensity1ShiftP, RoughWallDensity2ShiftP,BoxX, BoxY, BoxZ);
-	RoughDensityShiftP.Output(Files.roughDensity,3);
-	RoughDensity1ShiftP.Output(Files.roughDensity1,3);
-	RoughDensity2ShiftP.Output(Files.roughDensity2,3);
+	//RoughDensityShiftP.Output(Files.roughDensity,3);
+	//RoughDensity1ShiftP.Output(Files.roughDensity1,3);
+	//RoughDensity2ShiftP.Output(Files.roughDensity2,3);
 
 	BoxAverage(RoughDensity, Density, RoughWallDensity, WallDensity, Filter3D, int((Filter3D.m_Size.x)/2), minx, maxx, miny, maxy, maxz,BoxX,BoxY,BoxZ);
 	BoxAverage(RoughDensity1, Density1,RoughWallDensity1, WallDensity1, Filter3D, int((Filter3D.m_Size.x)/2), minx, maxx, miny, maxy, maxz,BoxX,BoxY,BoxZ);
@@ -197,21 +298,21 @@ void SimSingleThread(int N_cells, Cell* old_cells, Cell* new_cells, int** Neighb
 	BoxAverage(RoughDensityShiftP, DensityShiftP, RoughWallDensityShiftP, WallDensityShiftP, Filter3D, int((Filter3D.m_Size.x)/2), minx, maxx, miny, maxy, maxz,BoxX,BoxY,BoxZ);
 	BoxAverage(RoughDensity1ShiftP, Density1ShiftP,RoughWallDensity1ShiftP, WallDensity1ShiftP, Filter3D, int((Filter3D.m_Size.x)/2), minx, maxx, miny, maxy, maxz,BoxX,BoxY,BoxZ);
 	BoxAverage(RoughDensity2ShiftP, Density2ShiftP, RoughWallDensity2ShiftP, WallDensity2ShiftP,Filter3D, int((Filter3D.m_Size.x)/2), minx, maxx, miny, maxy, maxz,BoxX,BoxY,BoxZ);
-	DensityShiftP.Output(Files.density,3);
-	Density1ShiftP.Output(Files.density1,3);
-	Density2ShiftP.Output(Files.density2,3);
-	WallDensityShiftP.Output(Files.walldensity);
-	WallDensity1ShiftP.Output(Files.walldensity1);
-    WallDensity2ShiftP.Output(Files.walldensity2);
+	//DensityShiftP.Output(Files.density,3);
+	//Density1ShiftP.Output(Files.density1,3);
+	//Density2ShiftP.Output(Files.density2,3);
+	//WallDensityShiftP.Output(Files.walldensity);
+	//WallDensity1ShiftP.Output(Files.walldensity1);
+    //WallDensity2ShiftP.Output(Files.walldensity2);
 	Height_Average(Height, RoughHeight, minx, maxx, miny, maxy);
-	RoughHeight.Output(Files.roughheight);
+	//RoughHeight.Output(Files.roughheight);
 	Smooth(RoughHeight, Height, Filter, FilterDim, minx, maxx, miny, maxy);
-	Height.Output(Files.height);
+	//Height.Output(Files.height);
 
 
 	// find surface normal
 	GetSurfaceNormal(Normal, Height, minx, maxx, miny, maxy);
-	Normal.Output(Files.normal);
+	// Normal.Output(Files.normal);
 
 
 	int Nconv = 0;
@@ -220,7 +321,7 @@ void SimSingleThread(int N_cells, Cell* old_cells, Cell* new_cells, int** Neighb
     
 	//ShiftGrowthrate(&Environment, &FieldWall,BoxX, BoxY, BoxZ);
 
-	Environment.Output(Files.env,1);
+	//Environment.Output(Files.env,1);
     for (int level=0;level<maxLevels;level++)
     {
         FieldAgar[level]->Append(Files.aga,1);
@@ -233,6 +334,11 @@ void SimSingleThread(int N_cells, Cell* old_cells, Cell* new_cells, int** Neighb
 		// output cell data
 		if (OutFlag)
 		{
+			//int x_index = int(average(old_cells[cellID].Position).x / 4.00 + 64);
+			//int y_index = int(average(old_cells[cellID].Position).y / 4.00 + 64);
+			//int z_index = int(average(old_cells[cellID].Position).z / 4.00);
+			//if (!((x_index < 128) & (y_index < 128) & (z_index < 128) & (x_index >= 0) & (y_index >= 0) & (z_index >= 0)))
+			//	printf("asasas");
 
 			IntCoord XYAddress = Grid.GetXY( Grid.GetAddress(average(old_cells[cellID].Position)) );
 			DoubleCoord T(0,0,0);
@@ -248,18 +354,29 @@ void SimSingleThread(int N_cells, Cell* old_cells, Cell* new_cells, int** Neighb
 
 	// **************************** Loop through time and evolve colony ****************************
     
-    ClockIt     t0, t1, t2, t3, t4, t00;
+    //ClockIt     t0, t1, t2, t3, t4, t00;
     double      s0, s1, s2, s3, s4, st, s00;
     s0=0; s1=0; s2=0; s3=0; s4=0; st=0; s00=0;
     int koutput=0;
-    
-    rewind(Files.lineage);
+/* 	N_cells = applyBoundaryCondition(N_cells,old_cells,Grid,28.0,2.0);
+	std::cout<<"hahahaha"<<std::endl;
+		std::cout<<N_cells<<std::endl;
+	N_cells = reverseBoundaryCondition(N_cells,old_cells,Grid,28.0,2.0);
+		std::cout<<"hahahaha"<<std::endl;
+		std::cout<<N_cells<<std::endl; */
+
+	rewind(Files.lineage);
     while (t<=t_max)
 	{
+		N_cells = applyBoundaryCondition(N_cells,old_cells,Grid, 300.0,20.0);
+		getNeighbours(old_cells, N_cells, Grid, NeighbourList, maxNeighbours);
+
+		//printf("%d",N_cells);
+
 		numDivide = 0;					// number of cells dividing
 
 		// update fields only when UpdateFlag is true
-        t0.start();
+  //      t0.start();
         
         if (UpdateFlag)
         {
@@ -293,8 +410,8 @@ void SimSingleThread(int N_cells, Cell* old_cells, Cell* new_cells, int** Neighb
             getNeighbours(old_cells, N_cells, Grid, NeighbourList, maxNeighbours);
             
         }
-	s0+=t0.stop()/1000.0;
-        t00.start();
+//	s0+=t0.stop()/1000.0;
+  //      t00.start();
         if (HeightDensityUpdateFlag)
         {
             HeightDensityUpdateFlag = false;
@@ -309,13 +426,17 @@ void SimSingleThread(int N_cells, Cell* old_cells, Cell* new_cells, int** Neighb
             // update neighbour lists
 	    //            getNeighbours(old_cells, N_cells, Grid, NeighbourList, maxNeighbours);
         }
-       	s00+=t00.stop()/1000.0;
-        t1.start();
+ //      	s00+=t00.stop()/1000.0;
+   //     t1.start();
         
 		// calculate forces and move cells
         int cellID;
         if (OutFlag)
         {
+
+			std::cout << t << std::endl;
+			N_cells = reverseBoundaryCondition(N_cells, old_cells, Grid, 300.0, 20.0);
+
             //CreateOutputFiles(int(t*10), Files, append);
             CreateOutputFiles(koutput++, Files, append);
             for (cellID=0;cellID<N_cells;cellID++)
@@ -325,43 +446,53 @@ void SimSingleThread(int N_cells, Cell* old_cells, Cell* new_cells, int** Neighb
                 mean_stress(old_cells[cellID], old_cells, NeighbourList[cellID], Grid, Wall, Height, Normal, stressTensor, Fnet);
                 Output(Files.cells, cellID, t, old_cells[cellID], stressTensor);
             }
-            
+			N_cells = applyBoundaryCondition(N_cells, old_cells, Grid, 300.0, 20.0);
+			getNeighbours(old_cells, N_cells, Grid, NeighbourList, maxNeighbours);
+
+
         }
         
 #pragma omp parallel for default(shared) private(cellID) schedule(static)
         for (cellID=0;cellID<N_cells;cellID++)
-        {
-            MoveCell(cellID, Grid, old_cells, new_cells, NeighbourList[cellID], dt, Height, Normal, Wall);
+        {	
+			/*if (t<8.1)
+			{
+			MoveCell(cellID, Grid, old_cells, new_cells, NeighbourList[cellID], dt, Height, Normal, Wall,false);
             GrowCell(new_cells[cellID], cellID, dt, dividingCells, numDivide, Environment, FieldWall, Grid);
+
+
+			} else {*/
+			MoveCell(cellID, Grid, old_cells, new_cells, NeighbourList[cellID], dt, Height, Normal, Wall,true);
+
+			//}
         }
-        
+
 	//	fflush(Files.cells);
-        s1+=t1.stop()/1000.0;
-        t2.start();
+   //     s1+=t1.stop()/1000.0;
+     //   t2.start();
         
 		// output fields to file
 		if (OutFlag)
 		{
 			OutFlag = false;
-			std::cout<<"HAHAHA"<<std::endl;
-			std::cout.flush();
+
 			// save restart file with cell information
-			SaveCells(Files.restart, new_cells, N_cells, t, dt);
+			//SaveCells(Files.restart, new_cells, N_cells, t, dt);
 
 			// save field data
-            RoughHeight.Output(Files.roughheight);
-			Height.Output(Files.height);
-			RoughDensityShiftP.Output(Files.roughDensity,3);
-			RoughDensity1ShiftP.Output(Files.roughDensity1,3);
-			RoughDensity2ShiftP.Output(Files.roughDensity2,3);
-			DensityShiftP.Output(Files.density,3);
-			Density1ShiftP.Output(Files.density1,3);
-			Density2ShiftP.Output(Files.density2,3);
-			WallDensityShiftP.Output(Files.walldensity);
-			WallDensity1ShiftP.Output(Files.walldensity1);
-			WallDensity2ShiftP.Output(Files.walldensity2);
-			Normal.Output(Files.normal);
-			Environment.Output(Files.env,1);
+            //RoughHeight.Output(Files.roughheight);
+			//Height.Output(Files.height);
+			//RoughDensityShiftP.Output(Files.roughDensity,3);
+			//RoughDensity1ShiftP.Output(Files.roughDensity1,3);
+			//RoughDensity2ShiftP.Output(Files.roughDensity2,3);
+			//DensityShiftP.Output(Files.density,3);
+			//Density1ShiftP.Output(Files.density1,3);
+			//Density2ShiftP.Output(Files.density2,3);
+			//WallDensityShiftP.Output(Files.walldensity);
+			//WallDensity1ShiftP.Output(Files.walldensity1);
+			//WallDensity2ShiftP.Output(Files.walldensity2);
+			//Normal.Output(Files.normal);
+			//Environment.Output(Files.env,1);
             for (int level=0;level<maxLevels;level++)
             {
                 FieldAgar[level]->Append(Files.aga,1);
@@ -375,8 +506,8 @@ void SimSingleThread(int N_cells, Cell* old_cells, Cell* new_cells, int** Neighb
 			fflush(stdout);
             CloseOutputFiles(Files);
 		}
-        s2+=t2.stop()/1000.0;
-        t3.start();
+   //     s2+=t2.stop()/1000.0;
+     //   t3.start();
 
 		// Division (must be done after integration step because new neighbours are created)
 		for (int cellCount = 0; cellCount < numDivide; cellCount++)
@@ -404,8 +535,9 @@ void SimSingleThread(int N_cells, Cell* old_cells, Cell* new_cells, int** Neighb
 			// update the neighbours of all of these cells
 			getNeighbours(new_cells, Grid, NeighbourList, maxNeighbours, IDlist, IDlen);
 		}
-        s3+=t3.stop()/1000.0;
-        t4.start();
+    //    s3+=t3.stop()/1000.0;
+      //  t4.start();
+	N_cells = reverseBoundaryCondition(N_cells, new_cells,Grid, 300.0,20.0);
 
 		// switch positions of old and new cells
 		{
@@ -427,7 +559,7 @@ void SimSingleThread(int N_cells, Cell* old_cells, Cell* new_cells, int** Neighb
         HeightDensityUpdateFlag = (HeightDensityNextUpdateTime<=0);
         HeightDensityNextUpdateTime = (HeightDensityUpdateFlag? HeightDensityUpdateTime: HeightDensityNextUpdateTime) - dt;
 
-        s4+=t4.stop()/1000.0;
+  //      s4+=t4.stop()/1000.0;
         
 
 	}

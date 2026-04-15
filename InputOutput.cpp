@@ -1,14 +1,42 @@
 #include "InputOutput.h" 
-
+#include <iostream>
+#include <fstream>
 #include "Cell.h"
 #include "Constants.h"
 #include "Forces.h"
 #include <sys/stat.h>
 #include <string>
 #include <direct.h>
+#include <math.h>      
+#include <stdlib.h>     /* srand, rand */
+
+using namespace std;
 
 // input and output functions
 // also initializes the starting positions of cells
+void removeDupWord(string str,int current_ind, double* new_array)
+{
+	int i = 0;
+	double a;
+	string word = "";
+	for (auto x : str)
+	{
+		if (x == ' ')
+		{
+			a =  std::stod(word);
+			new_array[(current_ind) * 28 + i] = a;
+			i++;
+			word = "";
+		}
+		else {
+			word = word + x;
+		}
+	}
+	a = std::stod(word);
+
+	i++;
+	new_array[(current_ind - 1) * 28 + i] = a;
+}
 void CreateOutputFileLineage(int OutputID, OutputFiles& Files, bool append)
 {
     // create output file lineage
@@ -343,7 +371,11 @@ int AddFirstCells(Cell* cells, double L_divide, double radius, UniformGrid& Grid
 				else
 					{cells[icell].Type = 2;}
 				cells[icell].GrowthRate = 0.0;
-
+				int x_index = int(cm.x / 4.00 + 64);
+				int y_index = int(cm.y / 4.00 + 64);
+				int z_index = int(cm.z / 4.00);
+				if (!((x_index < 128) & (y_index < 128) & (z_index < 128) & (x_index >= 0) & (y_index >= 0) & (z_index >= 0)))
+					printf("asasas");
 				Grid.Add(icell, Grid.GetAddress(cm));
 
 				int icheck=0;
@@ -387,7 +419,153 @@ int AddFirstCells(Cell* cells, double L_divide, double radius, UniformGrid& Grid
 
 }
 
+int ReadFirstCells(Cell* cells, double L_divide, double radius, UniformGrid& Grid, Inputs& Ini)
+{
+	double DX = -(Ini.ColonySeparation * (Ini.ColonyNumber - 1)) * 0.5;
+	double L = L_divide * 0.5;
+	double dz = 0.0;
+	int icell = 0;
+	double thetaPos;
+	double thetaDir;
+	double radiusPos;
+	//	double Ltotal = L+2.0*radius;
+	DoubleCoord v, va, p, q, cm;
+	bool CheckOverlap = true;
+	int RegenCellMax = 10000;
+	double dist;
+	DoubleCoord c1, c2;
+	int RandType;
+	int asdg;
+	std::ifstream file("C:/Users/mind/Desktop/code_init_radial/15.txt");
+	double* new_cell_array = new double[28 * 10000];
+		std::string str;
+	int current_cell_no = 0;
+	while (std::getline(file, str)) {
+		removeDupWord(str,current_cell_no,new_cell_array);
+		current_cell_no++;
+	}
+	current_cell_no;
+		while (icell < current_cell_no)//changed by YueYan
+		{	
+			double asdfgh = 0.0;
+			int RegenCellCount = 0;
+			CheckOverlap = true;
+			//while (CheckOverlap == true)
+			//{
+				L = 0.0;
 
+				cells[icell].Radius = radius;
+				radiusPos = (float)Ini.ColonyRadius;
+				p = DoubleCoord(new_cell_array[icell * 28 + 3], new_cell_array[icell * 28 + 4], 0.5);
+				q = DoubleCoord(new_cell_array[icell * 28 + 6], new_cell_array[icell * 28 + 7], 0.5);
+				L += (new_cell_array[icell * 28 + 6] - new_cell_array[icell * 28 + 3])* (new_cell_array[icell * 28 + 6] - new_cell_array[icell * 28 + 3]);
+				L += (new_cell_array[icell * 28 + 7] - new_cell_array[icell * 28 + 4])* (new_cell_array[icell * 28 + 7] - new_cell_array[icell * 28 + 4]);
+				//L += (new_cell_array[icell * 28 + 8] - new_cell_array[icell * 28 + 5])* (new_cell_array[icell * 28 + 8] - new_cell_array[icell * 28 + 5]);
+
+				cells[icell].Length = sqrt(L);
+				v = DoubleCoord(0, 0, 0);
+				va = DoubleCoord(0, 0, 0);
+				cells[icell].Position.p = p;
+				cells[icell].Position.q = q;
+				cells[icell].Position.time_p = 0;
+				cells[icell].Position.time_q = 0;
+				cells[icell].Position.age_p = 0;
+				cells[icell].Position.age_q = 0;
+				cells[icell].Velocity = v;
+				cells[icell].AngularVelocity = va;
+				cells[icell].Ancestor = icell + 1;
+				asdfgh = (float)rand() / RAND_MAX;
+				if (asdfgh < 0.5)
+				{
+					cells[icell].Type = 1;
+				}
+				else
+				{
+					cells[icell].Type = 2;
+				}
+				cells[icell].GrowthRate = 0.0;
+				int x_index = int(average(cells[icell].Position).x / 4.00 + 64);
+				int y_index = int(average(cells[icell].Position).y / 4.00 + 64);
+				int z_index = int(average(cells[icell].Position).z / 4.00);
+				if (!((x_index < 128) & (y_index < 128) & (z_index < 128) & (x_index >= 0) & (y_index >= 0) & (z_index >= 0)))
+					printf("asasas");
+				Grid.Add(icell, Grid.GetAddress(average(cells[icell].Position)));
+
+				int icheck = 0;
+				while (icheck < icell)
+				{
+					//					double dist;
+					//					dist = sqrt((cm.x-(cells[icheck].Position.p.x+
+					//						cells[icheck].Position.q.x)*0.5)*(cm.x-
+					//						(cells[icheck].Position.p.x+cells[icheck].Position.q.x)*0.5)
+					//						+(cm.y-(cells[icheck].Position.p.y+cells[icheck].Position.q.y)*0.5)
+					//						*(cm.y-(cells[icheck].Position.p.y+cells[icheck].Position.q.y)*0.5));
+					min_distance(cells[icell], cells[icheck], dist, c1, c2);
+					if (dist < (cells[icell].Radius + cells[icheck].Radius))
+					{
+						CheckOverlap = true;
+						printf("Cells overlap!\n");
+						RegenCellCount++;
+						break;
+					}
+					icheck++;
+				}
+				if (icheck == icell) { CheckOverlap = false; }
+				if (RegenCellCount == RegenCellMax)
+				{
+					printf("Unable to generate initial cells!\n");
+					exit(0);
+				}
+
+			//}
+
+			icell++;
+		}
+
+		for (asdg = 1; asdg < 1000; asdg++) {
+			int RegenCellCount = 0;
+			CheckOverlap = true;
+			//while (CheckOverlap == true)
+			//{
+			L = 0.0;
+
+			cells[icell + asdg].Radius = radius;
+			radiusPos = (float)Ini.ColonyRadius;
+			p = DoubleCoord(new_cell_array[asdg]+220.00, new_cell_array[asdg * 28 + 4] + 220.00, new_cell_array[asdg * 28 + 5]);
+			q = DoubleCoord(new_cell_array[asdg * 28 + 6] + 220.00, new_cell_array[asdg * 28 + 7]+220.00, new_cell_array[asdg * 28 + 8]);
+			L += (new_cell_array[asdg * 28 + 6] - new_cell_array[asdg * 28 + 3]) * (new_cell_array[asdg * 28 + 6] - new_cell_array[asdg * 28 + 3]);
+			L += (new_cell_array[asdg * 28 + 7] - new_cell_array[asdg * 28 + 4]) * (new_cell_array[asdg * 28 + 7] - new_cell_array[asdg * 28 + 4]);
+			L += (new_cell_array[asdg * 28 + 8] - new_cell_array[asdg * 28 + 5]) * (new_cell_array[asdg * 28 + 8] - new_cell_array[asdg * 28 + 5]);
+
+			cells[icell + asdg].Length = sqrt(L);
+			v = DoubleCoord(0, 0, 0);
+			va = DoubleCoord(0, 0, 0);
+			cells[icell + asdg].Position.p = p;
+			cells[icell + asdg].Position.q = q;
+			cells[icell + asdg].Position.time_p = 0;
+			cells[icell + asdg].Position.time_q = 0;
+			cells[icell + asdg].Position.age_p = 0;
+			cells[icell + asdg].Position.age_q = 0;
+			cells[icell + asdg].Velocity = v;
+			cells[icell + asdg].AngularVelocity = va;
+			cells[icell + asdg].Ancestor = icell + 1;
+
+			if (icell < Ini.ColonySize * 0.5)
+			{
+				cells[icell + asdg].Type = 1;
+			}
+			else
+			{
+				cells[icell + asdg].Type = 2;
+			}
+			cells[icell + asdg].GrowthRate = 0.0;
+		}
+		
+	t0 = 0;
+
+	return icell;
+
+}
 
 int LoadCells(char* fname, Cell* cells, UniformGrid& Grid, double& t, double& dt)
 {
@@ -419,6 +597,12 @@ int LoadCells(char* fname, Cell* cells, UniformGrid& Grid, double& t, double& dt
 
 	for (int icell = 0; icell<cell_count; icell++)
 	{
+		int x_index = int(average(cells[icell].Position).x / 4.00 + 64);
+		int y_index = int(average(cells[icell].Position).y / 4.00 + 64);
+		int z_index = int(average(cells[icell].Position).z / 4.00);
+		if (!((x_index < 128) & (y_index < 128) & (z_index < 128) & (x_index >= 0) & (y_index >= 0) & (z_index >= 0)))
+			printf("asasas");
+
 		Grid.Add(icell, Grid.GetAddress(average(cells[icell].Position)));
 	}
 	printf("Added to grid \n");
@@ -522,10 +706,12 @@ Inputs ReadParameters(char* fname)
 			BoxX = atoi(var_value);
 			BoxY = BoxX;
 		}
-        else if (strcmp(var_name,"maxLevels")==0)
-            maxLevels = atoi(var_value);
-        else if (strcmp(var_name,"refinementGridHeight")==0)
-            refinementGridHeight = atoi(var_value);
+		else if (strcmp(var_name, "maxLevels") == 0) {
+
+		}
+		else if (strcmp(var_name, "refinementGridHeight") == 0) {
+
+		}
 		else if (strcmp(var_name,"Output_Time")==0)
 			OutputTime = atof(var_value);
 		else if (strcmp(var_name,"Update_Time")==0)
@@ -575,9 +761,7 @@ Inputs ReadParameters(char* fname)
 		else
 		{
 			printf("Unknown parameter: %s \n", var_name);
-			fflush(stdout);
-			assert(false);
-			exit(-1);
+
 		}
 	}
 	//cellRadius = cellRadius*exp((maxGrowthRate-1)/3*log(3)/log(2));

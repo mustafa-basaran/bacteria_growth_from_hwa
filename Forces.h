@@ -11,7 +11,7 @@ void F_surf_tension(const Cell& cell, UniformGrid& Grid, const IntCoord& XYAddre
 void F_v(const Cell& cell, DoubleCoord& F, DoubleCoord& T);
 double clamp(double n, double minn, double maxn);
 void min_distance(const Cell& cell1, const Cell& cell2, double& t, DoubleCoord& c1, DoubleCoord& c2); // double& d, double& s,
-void sum_forces(const Cell& cell, const Cell* cell_array, const int* neighbours, DoubleCoord& Fnet, DoubleCoord& Tnet, DoubleArray2D& Height, CoordArray2D& Normal, UniformGrid& Grid, const IntCoord& XYAddress, DoubleArray2D& Wall, DoubleCoord& cwStaFric, DoubleCoord& cwDynFric);
+void sum_forces(const Cell& cell, const Cell* cell_array, const int* neighbours, DoubleCoord& Fnet, DoubleCoord& Tnet, DoubleArray2D& Height, CoordArray2D& Normal, UniformGrid& Grid, const IntCoord& XYAddress, DoubleArray2D& Wall, DoubleCoord& cwStaFric, DoubleCoord& cwDynFric, bool isprop);
 void reduce_neighbours(const Cell& cell, const Cell* cell_array, int* neighbours, int& numNeighbours);
 //void F_int(double k, const Cell& cell, Segment& F);
 

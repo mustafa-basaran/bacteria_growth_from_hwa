@@ -29,7 +29,8 @@ void getNeighbours(const Cell* cell_array, int N_cells, UniformGrid& Grid, int**
 	// loop through all cells
 	for (int cellID=0;cellID<N_cells;cellID++)
 	{
-		// get coarse-grained neighbours from Grid
+		//// get coarse-grained neighbours from Grid
+
 		Address = Grid.GetAddress(average(cell_array[cellID].Position));
 		numNeighbours = Grid.GetNeighbours(cellID, Address, NeighbourList[cellID], maxNeighbours);
 		numNeighbours = reduceNeighbours(cell_array[cellID], cell_array, NeighbourList[cellID]);
@@ -47,7 +48,7 @@ void getNeighbours(const Cell* cell_array, UniformGrid& Grid, int** NeighbourLis
 	{
 		cellID = ID[ii];
 
-		// get coarse-grained neighbours from Grid
+		//// get coarse-grained neighbours from Grid
 		Address = Grid.GetAddress(average(cell_array[cellID].Position));
 		numNeighbours = Grid.GetNeighbours(cellID, Address, NeighbourList[cellID], maxNeighbours);
 		numNeighbours = reduceNeighbours(cell_array[cellID], cell_array, NeighbourList[cellID]);
@@ -115,7 +116,6 @@ void min_distance(const Cell& cell1, const Cell& cell2, double& d, DoubleCoord& 
 	q1 = cell1.Position.q;
 	p2 = cell2.Position.p;
 	q2 = cell2.Position.q;
-
 	// find the direction Segment of S1 and S2
 	v1 = diff(q1,p1);
 	v2 = diff(q2,p2);
@@ -156,7 +156,6 @@ void min_distance(const Cell& cell1, const Cell& cell2, double& d, DoubleCoord& 
 	c2 = sum(p2,scale(v2,t));
 	cv = diff(c1,c2);
 	d = sqrt(dot(cv,cv));		// length of segment connecting two cells
-
 }
 
 

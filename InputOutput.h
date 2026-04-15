@@ -47,6 +47,8 @@ void CloseOutputFileLineage(OutputFiles& Files);
 void CreateOutputFiles(int OutputID, OutputFiles& Files, bool append);
 void CloseOutputFiles(OutputFiles& Files);
 int AddFirstCells(Cell* cells, double L_divide, double radius, UniformGrid& Grid, Inputs& Ini);
+int ReadFirstCells(Cell* cells, double L_divide, double radius, UniformGrid& Grid, Inputs& Ini);
+
 int LoadCells(char* fname, Cell* cells, UniformGrid& Grid, double& t, double& dt);
 void SaveCells(FILE* FID, Cell* cells, int N_cells, double t, double dt);
 Inputs ReadParameters(char* fname);

@@ -11,5 +11,8 @@
 struct OutputFiles;
 
 void RunSimulation(int N_cells, Cell* old_cells, Cell* new_cells, int** NeighbourList, int maxNeighbours, UniformGrid& Grid, OutputFiles Files, bool append, DoubleArray2D& Height, DoubleArray3D& Density, DoubleArray3D& Density1, DoubleArray3D& Density2, DoubleArray2D& WallDensity,DoubleArray2D& WallDensity1,DoubleArray2D& WallDensity2,EnvArray3D& Environment, EnvArray3D& oldEnvironment, AgaArray3D** FieldAgar, AgaArray3D** oldFieldAgar, AgaArray2D** FieldWall, AgaArray2D** oldFieldWall, CoordArray2D& Normal);
+int applyBoundaryCondition(int N_cells, Cell* old_cells, UniformGrid& Grid, double L_domain, double L_reflection);
+int reverseBoundaryCondition(int N_cells, Cell* old_cells, UniformGrid& Grid, double L_domain, double L_reflection);
+int reverseBoundaryCondition1(int N_cells, Cell* old_cells, UniformGrid& Grid, double L_domain, double L_reflection);
 
 #endif // _SIMULATION_H_

@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
+#include <math.h>
 
 /******************************************************************************
  * Contains helper functions for doing computations on arrays and segments
@@ -124,6 +125,11 @@ inline DoubleCoord sum(const DoubleCoord& a, const DoubleCoord& b)
 inline DoubleCoord scale(const DoubleCoord& a, double C)
 {
 	return DoubleCoord(a.x*C, a.y*C, a.z*C);
+}
+
+inline DoubleCoord rotate(const DoubleCoord& a, double angle)
+{
+	return DoubleCoord(a.x * cos(angle) - a.y * sin(angle), a.x * sin(angle) + a.y * cos(angle), a.z);
 }
 
 inline Segment sum(const Segment& a, const Segment& b)

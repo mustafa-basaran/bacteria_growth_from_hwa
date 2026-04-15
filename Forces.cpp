@@ -8,12 +8,17 @@
 #include "tools.h"
 #include "Neighbours.h"
 #include <iostream>
+#define PICON 3.14159265
 using namespace std;
 // Cell-cell forces
 // returns force F, position of the contact force r, and distance between cells d
 void F_cc(const Cell& cell1, const Cell& cell2, DoubleCoord& F, DoubleCoord& r, double& d)
-{
+{  
 	// the points indicating the segment of closest approach of the two cells
+	//if (cell1.Position.p.x == 32.120600000000003 && cell2.Position.p.x== 33.393599999999999) {
+	//	printf("dd");
+	//}
+
 	DoubleCoord c1, c2;
 	double gamma_n = 100.0;
 
@@ -38,50 +43,73 @@ void F_cc(const Cell& cell1, const Cell& cell2, DoubleCoord& F, DoubleCoord& r, 
 
 	// elastic force, location of overlap
 //	double FE_mag = k_cc*pow(delta,3.0/2.0); // Mya's approximation
-    double FE_mag = sqrt(cell1.Radius*cell2.Radius/(cell1.Radius+cell2.Radius))*k_cc*pow(delta,3.0/2.0); // Yue's version
+    double FE_mag = sqrt(cell1.Radius*cell2.Radius/(cell1.Radius+cell2.Radius))*k_cc*pow(delta,5.0/2.0); // Yue's version
 	DoubleCoord FE = scale(vn,-FE_mag);	// elastic force
 
 //	r = scale(sum(c1,c2),cell1.Radius/sigma);	// position of the force (if F!=0, this should be on the cell boundary, or close to it), Mya's version
     r = scale(sum(scale(c1,cell2.Radius),scale(c2,cell1.Radius)),1/sigma); // changed from last line because cell1 and cell2 have different radii, Yue's version.
+	//FE = scale(FE, 5.0);
 
-	if (FE_mag>DBL_EPSILON)	// if cells are touching, compute friction
-	{
+	//if (FE_mag>DBL_EPSILON)	// if cells are touching, compute friction
+	//{
 
-		// angular velocity
-		DoubleCoord rcm1 = diff(r,average(cell1.Position));
-		DoubleCoord rcm2 = diff(r,average(cell2.Position));
+	//	// angular velocity
+	//	DoubleCoord rcm1 = diff(r,average(cell1.Position));
+	//	DoubleCoord rcm2 = diff(r,average(cell2.Position));
 
-		DoubleCoord va1 = cross(cell1.AngularVelocity,rcm1);
-		DoubleCoord va2 = cross(cell2.AngularVelocity,rcm2);
+	//	DoubleCoord va1 = cross(cell1.AngularVelocity,rcm1);
+	//	DoubleCoord va2 = cross(cell2.AngularVelocity,rcm2);
 
-		// total velocity
-		DoubleCoord v1 = sum(cell1.Velocity,va1);
-		DoubleCoord v2 = sum(cell2.Velocity,va2);
+	//	// total velocity
+	//	DoubleCoord v1 = sum(cell1.Velocity,va1);
+	//	DoubleCoord v2 = sum(cell2.Velocity,va2);
 
-		// difference in velocity
-		DoubleCoord dv = diff(v2,v1);
+	//	// difference in velocity
+	//	DoubleCoord dv = diff(v2,v1);
 
-		double gamma = gamma_t;
-		double mu = cell_mu;
+	//	double gamma = gamma_t;
+	//	double mu = cell_mu;
 
-		// tangential and normal parts of the dissipative force
-		DoubleCoord dvn = scale(vn,dot(dv,vn));
-		DoubleCoord FDn = scale(dvn,gamma_n*Meff*delta);		// normal dissipation
+	//	// tangential and normal parts of the dissipative force
+	//	DoubleCoord dvn = scale(vn,dot(dv,vn));
+	//	DoubleCoord FDn = scale(dvn,gamma_n*Meff*delta);		// normal dissipation
 
-		DoubleCoord dvt = diff(dv,dvn);					// tangential dissipation
-		double v_mag = sqrt(dot(dvt,dvt));
+	//	DoubleCoord dvt = diff(dv,dvn);					// tangential dissipation
+	//	double v_mag = sqrt(dot(dvt,dvt));
 
-		DoubleCoord FDt(0.0,0.0,0.0);
+	//	DoubleCoord FDt(0.0,0.0,0.0);
 
-		if (v_mag>3*DBL_EPSILON)
-			FDt = scale(dvt,min(gamma*Meff*sqrt(delta),mu*FE_mag/v_mag));
+	//	if (v_mag>3*DBL_EPSILON)
+	//		FDt = scale(dvt,min(gamma*Meff*sqrt(delta),mu*FE_mag/v_mag));
 
 
-		// sum total force, elastic + dissipative
-		F = sum(sum(FE,FDt),FDn);
+	//	// sum total force, elastic + dissipative
+	//	F = sum(sum(FE,FDt),FDn);
+	//}
+	//else{ F = FE; }
+	//if (F.z > 0) {
+	//	printf("haha");
+	//}
+	//if (F.z < 0) {
+	//	printf("haha");
+	//}
+	F = FE;
+	F = scale(F, 5.0);
+	//if (cell1.Ancestor == 280) {
+	//	std::cout << F.x << ',' << F.y << ',' << F.z << std::endl;
+	//	std::cout << d << ',' <<cell2.Ancestor << std::endl;
+	//}
+	/*printf("%f, %f, %f \n", F.x, F.y, F.z);
+
+	if (cell1.Position.p.x == -8.9154500252558844) {
+		printf("upper \n", F.x, F.y, F.z);
 	}
-	else
-		F = FE;
+	if (F.x > 1000000.0 || F.x < -1000000.0) {
+		printf("hahaha");
+	}*/
+	/*if (cell1.Position.p.x == 32.120600000000003 && cell2.Position.p.x == 33.393599999999999) {
+		printf("dd");
+	}*/
 }
 
 // Force between cell and agar (wall) at y=0
@@ -100,8 +128,8 @@ void F_cw(const Cell& cell, double Wall_z, DoubleCoord& F1, DoubleCoord& F2, Dou
 
 	// Location of wall at first locus including effect of roughness
 	DoubleCoord wall;
-	wall.x = cell.Position.p.x+((float)rand()/RAND_MAX-0.5)*var_pos;
-	wall.y = cell.Position.p.y+((float)rand()/RAND_MAX-0.5)*var_pos;
+	wall.x = cell.Position.p.x;
+	wall.y = cell.Position.p.y;
 	wall.z = Wall_z;
 	r1 = wall; // location of wall force
 
@@ -333,64 +361,84 @@ void F_v(const Cell& cell, DoubleCoord& F, DoubleCoord& T)
 }
 
 // sum all of the forces on the cell
-void sum_forces(const Cell& cell, const Cell* cell_array, const int* neighbours, DoubleCoord& Fnet, DoubleCoord& Tnet, DoubleArray2D& Height, CoordArray2D& Normal, UniformGrid& Grid, const IntCoord& XYAddress, DoubleArray2D& Wall, DoubleCoord& cwStaFric, DoubleCoord& cwDynFric)
+void sum_forces(const Cell& cell, const Cell* cell_array, const int* neighbours, DoubleCoord& Fnet, DoubleCoord& Tnet, DoubleArray2D& Height, CoordArray2D& Normal, UniformGrid& Grid, const IntCoord& XYAddress, DoubleArray2D& Wall, DoubleCoord& cwStaFric, DoubleCoord& cwDynFric, bool isprop)
 {
 	Fnet = DoubleCoord(0,0,0);
 	Tnet = DoubleCoord(0,0,0);
-	DoubleCoord Fprop(0,0,0),F(0,0,0), F2(0,0,0), T(0,0,0), p1,q1,r, r2;
+	DoubleCoord Tprop(0,0,0),Fprop(0,0,0),Fprop_rotated(0, 0, 0),F(0,0,0), F2(0,0,0), T(0,0,0), p1,q1,r, r2;
 	DoubleCoord cm = average(cell.Position);
 	double d, wall_y;
-
 
 	int ID;
 	int numNeighbours = neighbours[0];
 
 	// loop through neighbours and find the forces
 	//Added by mustafa başaran
+	if (isprop  && cell.Type == 1){
+	////if (isprop ){
+
 	p1 = cell.Position.p;
 	q1 = cell.Position.q;
-	Fprop = scale(diff(q1,p1),10.0);
-	Fnet = sum(Fnet,Fprop);
-	Fnet.z = 0.0 ;
-		std::cout<<p1.x<<std::endl;
-		std::cout<<"HAHAHA"<<std::endl;
-		std::cout.flush();
-	//End of edit by MB
-/* 	for (int neighbourID = 1; neighbourID<numNeighbours+1; neighbourID++)
+	Fprop = scale(diff(q1,p1),100.0);
+	Fprop.z = 0.0;
+	/*Fprop_rotated.z = Fprop.z;
+	Fprop_rotated.x = Fprop.x * cos(35.0 * PICON / 180.0) - Fprop.y * sin(35.0 * PICON / 180.0);
+	Fprop_rotated.y = Fprop.x * sin(35.0 * PICON / 180.0) + Fprop.y * cos(35.0 * PICON / 180.0);*/
+
+	Tprop.z = 1080.0;//5di eskiden
+	Fnet = sum(Fnet, Fprop);
+	Tnet = sum(Tnet, Tprop);
+	}	//End of edit by MB
+	for (int neighbourID = 1; neighbourID<numNeighbours+1; neighbourID++)
 	{
 		ID = neighbours[neighbourID];	// the ID of the current neighbour
 		F_cc(cell, cell_array[ID], F, r, d);	// contact force between cell and neighbours
+		//if (F.x != F.x) {
+		//	printf("hahaha");
+		//}
+
+
 		Fnet = sum(Fnet, F);	// net force is the sum of all forces
 		r = diff(r, cm);		// r is distance from centre of mass to contact force location
 		Tnet = sum(Tnet, cross(r, F));	// net torque = sum(rxF)
-	} */
-
-/* 	cwStaFric = DoubleCoord(0,0,0);
-	cwDynFric = DoubleCoord(0,0,0);
-    // calculate cell-wall forces if cell is close to wall
-	if (min(cell.Position.q.z,cell.Position.p.z)<1.2*cell.Radius)
-	{
-		wall_y = Wall.Get(XYAddress.x,XYAddress.y);
-		F_cw(cell, wall_y, F, F2, r, r2, cwStaFric, cwDynFric);
-		Fnet = sum(Fnet, F);	// net force is the sum of all forces
-		r = diff(r, cm);		// r is distance from centre of mass to contact force location
-		Tnet = sum(Tnet, cross(r, F));	// net torque = sum(rxF)
-
-		Fnet = sum(Fnet, F2);	// net force is the sum of all forces
-		r2 = diff(r2, cm);		// r is distance from centre of mass to contact force location
-		Tnet = sum(Tnet, cross(r2, F2));	// net torque = sum(rxF)
 	}
-    Fnet.z = 0.0; */
-	
+	//if (cell.Ancestor == 280) {
+	//	std::cout << "TOTAL" << std::endl;
+	//	std::cout << Fnet.x << ',' << Fnet.y << ',' << Fnet.z << std::endl;
+	//	std::cout << Tnet.x << ',' << Tnet.y << ',' << Tnet.z << std::endl;
+
+	//	std::cout << "NEWTIMESSTEP" << std::endl;
+
+	//}
+
+	//cwStaFric = DoubleCoord(0,0,0);
+	//cwDynFric = DoubleCoord(0,0,0);
+ //   // calculate cell-wall forces if cell is close to wall
+	//if (min(cell.Position.q.z,cell.Position.p.z)<1.2*cell.Radius)
+	//{
+	//	wall_y = Wall.Get(XYAddress.x,XYAddress.y);
+	//	F_cw(cell, wall_y, F, F2, r, r2, cwStaFric, cwDynFric);
+	//	Fnet = sum(Fnet, F);	// net force is the sum of all forces
+	//	r = diff(r, cm);		// r is distance from centre of mass to contact force location
+	//	Tnet = sum(Tnet, cross(r, F));	// net torque = sum(rxF)
+
+	//	Fnet = sum(Fnet, F2);	// net force is the sum of all forces
+	//	r2 = diff(r2, cm);		// r is distance from centre of mass to contact force location
+	//	Tnet = sum(Tnet, cross(r2, F2));	// net torque = sum(rxF)
+	//}
+ //   
 	// viscous force with fluid
-/* 	F_v(cell, F, T);
+ /*	F_v(cell, F, T);
 	Fnet = sum(Fnet, F);
-	Tnet = sum(Tnet, T);
+	Tnet = sum(Tnet, T); 
+
 
 	F_surf_tension(cell, Grid, XYAddress, Height, Normal, F, T);
 	Fnet = sum(Fnet, F);
-	Tnet = sum(Tnet, T); */
-    
+	Tnet = sum(Tnet, T);*/
+	
+	 //std::cout<<Fnet.x<<','<<Fnet.y<<','<<Fnet.z<<std::endl;
+
 
 }
 

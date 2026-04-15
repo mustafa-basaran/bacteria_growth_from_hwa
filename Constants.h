@@ -32,7 +32,7 @@ extern int BoxX;
 extern int BoxY;
 extern int BoxZ;
 extern int BoxZAgar;
-extern int maxLevels;
+const int maxLevels = 4;
 
 extern double BoxLength;
 extern int FilterLen;
@@ -61,7 +61,7 @@ extern bool NutrientGSI;
 extern double Rc;
 
 // colony constants
-extern int refinementGridHeight;
+const int refinementGridHeight = 2;
 
 
 #endif /* CONSTANTS_H_ */
